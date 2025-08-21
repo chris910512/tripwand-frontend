@@ -301,11 +301,12 @@
                     <div class="space-y-5">
                         <!-- 여행지 -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="city-search" class="block text-sm font-medium text-gray-700 mb-2">
                                 여행지 *
                             </label>
                             <div class="relative">
                                 <input
+                                        id="city-search"
                                         type="text"
                                         bind:value={citySearch}
                                         placeholder="도시명을 검색하세요..."
@@ -331,10 +332,11 @@
 
                         <!-- 여행 기간 -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="duration" class="block text-sm font-medium text-gray-700 mb-2">
                                 여행 기간 (일) *
                             </label>
                             <input
+                                    id="duration"
                                     type="number"
                                     min="1"
                                     max="30"
@@ -349,8 +351,9 @@
 
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">연령대</label>
+                                    <label for="age-group" class="block text-sm font-medium text-gray-700 mb-2">연령대</label>
                                     <select
+                                            id="age-group"
                                             bind:value={formData.ageGroup}
                                             class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500"
                                     >
@@ -361,8 +364,9 @@
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">인원 수</label>
+                                    <label for="group-size" class="block text-sm font-medium text-gray-700 mb-2">인원 수</label>
                                     <input
+                                            id="group-size"
                                             type="number"
                                             min="1"
                                             max="20"
@@ -374,8 +378,9 @@
 
                             <div class="mt-4 space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">여행 목적</label>
+                                    <label for="travel-purpose" class="block text-sm font-medium text-gray-700 mb-2">여행 목적</label>
                                     <select
+                                            id="travel-purpose"
                                             bind:value={formData.purpose}
                                             class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500"
                                     >
@@ -387,8 +392,9 @@
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">여행 타입</label>
+                                    <label for="travel-type" class="block text-sm font-medium text-gray-700 mb-2">여행 타입</label>
                                     <select
+                                            id="travel-type"
                                             bind:value={formData.travelType}
                                             class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500"
                                     >
