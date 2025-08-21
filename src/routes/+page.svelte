@@ -309,13 +309,13 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-4" style="height: calc(100vh - 5rem);" class:pointer-events-none={loading} class:opacity-75={loading}>
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 h-full">
                 <!-- Left Panel - Input Form -->
-                <div class="bg-white rounded-2xl shadow-lg p-4 h-full flex flex-col">
+                <div class="bg-white rounded-2xl shadow-lg p-4 h-full flex flex-col overflow-visible">
                     <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center flex-shrink-0">
                         <MapPin class="w-5 h-5 mr-2 text-rose-600" />
                         여행 정보 입력
                     </h2>
 
-                    <div class="space-y-3 flex-1 overflow-y-auto pr-2">
+                    <div class="space-y-3 flex-1 overflow-y-auto pr-1 pl-1">
                         <!-- 여행지 -->
                         <div class="flex-shrink-0">
                             <label for="city-search" class="block text-sm font-medium text-gray-700 mb-2">
@@ -327,7 +327,7 @@
                                         type="text"
                                         bind:value={citySearch}
                                         placeholder="도시명을 검색하세요..."
-                                        class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                                        class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent focus:ring-offset-2 transition-all"
                                 />
                                 <Search class="absolute right-3 top-3.5 w-5 h-5 text-gray-400" />
 
@@ -358,7 +358,7 @@
                                     min="1"
                                     max="30"
                                     bind:value={formData.duration}
-                                    class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                                    class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent focus:ring-offset-2 transition-all"
                             />
                         </div>
 
@@ -372,7 +372,7 @@
                                     <select
                                             id="age-group"
                                             bind:value={formData.ageGroup}
-                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 text-sm"
+                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 focus:border-transparent text-sm transition-all"
                                     >
                                         {#each ageGroups as age}
                                             <option value={age}>{age}</option>
@@ -388,7 +388,7 @@
                                             min="1"
                                             max="20"
                                             bind:value={formData.groupSize}
-                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 text-sm"
+                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 focus:border-transparent text-sm transition-all"
                                     />
                                 </div>
                             </div>
@@ -399,7 +399,7 @@
                                     <select
                                             id="travel-purpose"
                                             bind:value={formData.purpose}
-                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 text-sm"
+                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 focus:border-transparent text-sm transition-all"
                                     >
                                         <option value="">선택하세요</option>
                                         {#each purposes as purpose}
@@ -413,7 +413,7 @@
                                     <select
                                             id="travel-type"
                                             bind:value={formData.travelType}
-                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 text-sm"
+                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 focus:border-transparent text-sm transition-all"
                                     >
                                         <option value="">선택하세요</option>
                                         {#each types as type}
