@@ -69,55 +69,32 @@
         },
 
         generateTravelPlan: async (params) => {
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            const response = await fetch('http://localhost:8080/api/v1/travel/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    destination: params.destination,
+                    duration: params.duration,
+                    age_group: params.ageGroup,
+                    group_size: params.groupSize,
+                    purpose: params.purpose,
+                    travel_type: params.travelType
+                })
+            });
 
-            const days = [];
-            for (let i = 1; i <= params.duration; i++) {
-                days.push({
-                    day: i,
-                    date: `2025년 1월 ${i}일`,
-                    schedule: {
-                        morning: {
-                            time: '09:00 - 12:00',
-                            activity: `Day ${i} 오전 관광지 방문`,
-                            description: '유명 관광 명소 탐방 및 사진 촬영',
-                            tips: '오전 시간대는 관광객이 적어 여유롭게 관람 가능'
-                        },
-                        afternoon: {
-                            time: '12:00 - 17:00',
-                            activity: `Day ${i} 점심 및 오후 활동`,
-                            description: '현지 맛집에서 점심 후 쇼핑 또는 체험 활동',
-                            tips: '점심 시간대 예약 필수'
-                        },
-                        evening: {
-                            time: '17:00 - 21:00',
-                            activity: `Day ${i} 저녁 및 문화 체험`,
-                            description: '일몰 명소 방문 후 저녁 식사',
-                            tips: '일몰 30분 전 도착 권장'
-                        },
-                        night: {
-                            time: '21:00 - 23:00',
-                            activity: `Day ${i} 야간 투어`,
-                            description: '야경 명소 또는 나이트 마켓 방문',
-                            tips: '늦은 시간 이동 시 택시 이용 권장'
-                        }
-                    }
-                });
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.status}`);
             }
 
-            return {
-                destination: params.destination,
-                duration: params.duration,
-                totalBudget: `약 ${params.duration * 150}만원`,
-                transportation: '대중교통 + 택시 조합 추천',
-                accommodation: '시내 중심가 3-4성급 호텔 추천',
-                days: days,
-                warnings: [
-                    '여권 유효기간 6개월 이상 확인',
-                    '여행자 보험 가입 권장',
-                    '현지 환율 및 환전 확인'
-                ]
-            };
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error('Failed to generate travel plan');
+            }
+
+            return result.data;
         }
     };
 
@@ -135,9 +112,13 @@
                 const results = await API.searchCities(citySearch);
                 cities = results;
                 showCityDropdown = true;
+                
+                // 직접 입력된 경우에도 destination 업데이트
+                formData.destination = citySearch;
             } else {
                 cities = [];
                 showCityDropdown = false;
+                formData.destination = '';
             }
         }, 300);
     });
@@ -158,10 +139,15 @@
     }
 
     async function handleGeneratePlan() {
-        if (!formData.destination || !formData.duration) {
+        // 목적지와 기간 검증
+        const destination = formData.destination || citySearch;
+        if (!destination.trim() || !formData.duration) {
             alert('필수 정보를 입력해주세요.');
             return;
         }
+        
+        // destination 동기화
+        formData.destination = destination;
 
         loading = true;
         try {
@@ -169,7 +155,13 @@
             travelPlan = plan;
         } catch (error) {
             console.error('Failed to generate plan:', error);
-            alert('여행 계획 생성에 실패했습니다.');
+            let errorMessage = '여행 계획 생성에 실패했습니다.';
+            
+            if (error.message.includes('API Error')) {
+                errorMessage += ' 서버 연결에 문제가 있습니다.';
+            }
+            
+            alert(errorMessage);
         } finally {
             loading = false;
         }
@@ -436,61 +428,91 @@
                         <div class="space-y-4">
                             <!-- Overview -->
                             <div class="bg-gradient-to-r from-rose-50 to-orange-50 rounded-lg p-4">
-                                <h3 class="font-semibold text-gray-800 mb-2">{travelPlan.destination}</h3>
+                                <h3 class="font-semibold text-gray-800 mb-2">{formData.destination}</h3>
                                 <div class="grid grid-cols-2 gap-2 text-sm">
                                     <div class="flex items-center text-gray-600">
                                         <Calendar class="w-4 h-4 mr-1 text-rose-500" />
-                                        {travelPlan.duration}일 여행
+                                        {formData.duration}일 여행
                                     </div>
                                     <div class="flex items-center text-gray-600">
                                         <DollarSign class="w-4 h-4 mr-1 text-orange-500" />
-                                        {travelPlan.totalBudget}
+                                        약 {Math.round(travelPlan.estimated_cost / 10000)}만원
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Daily Schedule -->
                             <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
-                                {#each travelPlan.days as day}
+                                {#each travelPlan.itinerary as dayPlan}
                                     <div class="border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow">
                                         <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
                       <span class="w-8 h-8 bg-gradient-to-r from-rose-500 to-orange-500 text-white rounded-full flex items-center justify-center text-sm mr-2">
-                        {day.day}
+                        {dayPlan.day}
                       </span>
-                                            {day.date}
+                                            Day {dayPlan.day}
                                         </h4>
 
-                                        <div class="space-y-2">
-                                            {#each Object.entries(day.schedule) as [period, info]}
-                                                <div class="pl-4 border-l-2 border-orange-200 hover:border-rose-400 transition-colors">
-                                                    <div class="flex items-center text-sm text-gray-500 mb-1">
-                                                        <Clock class="w-3 h-3 mr-1" />
-                                                        {info.time}
-                                                    </div>
-                                                    <div class="font-medium text-gray-700">{info.activity}</div>
-                                                    <div class="text-sm text-gray-600 mt-1">{info.description}</div>
-                                                    <div class="text-xs text-rose-600 mt-1">💡 {info.tips}</div>
+                                        <div class="space-y-3">
+                                            <!-- Morning -->
+                                            <div class="pl-4 border-l-2 border-orange-200 hover:border-rose-400 transition-colors">
+                                                <div class="flex items-center text-sm text-gray-500 mb-1">
+                                                    <Clock class="w-3 h-3 mr-1" />
+                                                    오전 (09:00 - 12:00)
                                                 </div>
-                                            {/each}
+                                                <div class="font-medium text-gray-700">{dayPlan.morning.summary}</div>
+                                                <div class="text-sm text-gray-600 mt-1">{dayPlan.morning.detail}</div>
+                                            </div>
+
+                                            <!-- Afternoon -->
+                                            <div class="pl-4 border-l-2 border-orange-200 hover:border-rose-400 transition-colors">
+                                                <div class="flex items-center text-sm text-gray-500 mb-1">
+                                                    <Clock class="w-3 h-3 mr-1" />
+                                                    오후 (12:00 - 17:00)
+                                                </div>
+                                                <div class="font-medium text-gray-700">{dayPlan.afternoon.summary}</div>
+                                                <div class="text-sm text-gray-600 mt-1">{dayPlan.afternoon.detail}</div>
+                                            </div>
+
+                                            <!-- Evening -->
+                                            <div class="pl-4 border-l-2 border-orange-200 hover:border-rose-400 transition-colors">
+                                                <div class="flex items-center text-sm text-gray-500 mb-1">
+                                                    <Clock class="w-3 h-3 mr-1" />
+                                                    저녁 (17:00 - 21:00)
+                                                </div>
+                                                <div class="font-medium text-gray-700">{dayPlan.evening.summary}</div>
+                                                <div class="text-sm text-gray-600 mt-1">{dayPlan.evening.detail}</div>
+                                            </div>
+
+                                            <!-- Night -->
+                                            <div class="pl-4 border-l-2 border-orange-200 hover:border-rose-400 transition-colors">
+                                                <div class="flex items-center text-sm text-gray-500 mb-1">
+                                                    <Clock class="w-3 h-3 mr-1" />
+                                                    밤 (21:00 - 23:00)
+                                                </div>
+                                                <div class="font-medium text-gray-700">{dayPlan.night.summary}</div>
+                                                <div class="text-sm text-gray-600 mt-1">{dayPlan.night.detail}</div>
+                                            </div>
                                         </div>
                                     </div>
                                 {/each}
                             </div>
 
-                            <!-- Warnings -->
-                            <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-4">
-                                <div class="flex items-start">
-                                    <AlertCircle class="w-5 h-5 text-amber-600 mr-2 flex-shrink-0 mt-0.5" />
-                                    <div>
-                                        <h4 class="font-medium text-amber-900 mb-2">주의사항</h4>
-                                        <ul class="text-sm text-amber-800 space-y-1">
-                                            {#each travelPlan.warnings as warning}
-                                                <li>• {warning}</li>
-                                            {/each}
-                                        </ul>
+                            <!-- Cautions -->
+                            {#if travelPlan.cautions && travelPlan.cautions.length > 0}
+                                <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-4">
+                                    <div class="flex items-start">
+                                        <AlertCircle class="w-5 h-5 text-amber-600 mr-2 flex-shrink-0 mt-0.5" />
+                                        <div>
+                                            <h4 class="font-medium text-amber-900 mb-2">주의사항</h4>
+                                            <ul class="text-sm text-amber-800 space-y-1">
+                                                {#each travelPlan.cautions as caution}
+                                                    <li>• {caution}</li>
+                                                {/each}
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            {/if}
                         </div>
                     {:else}
                         <div class="flex flex-col items-center justify-center h-96 text-gray-400">
