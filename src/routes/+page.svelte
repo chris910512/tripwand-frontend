@@ -168,22 +168,31 @@
     }
 
     function handleTabClick(tab) {
-        if ((tab === 'chat' || tab === 'profile') && !isLoggedIn) {
-            showLoginModal = true;
-        } else {
-            activeTab = tab;
+        if (tab === 'chat' || tab === 'profile') {
+            alert('현재 개발중인 서비스로 지금은 여행 일정 추천만 사용 가능합니다.');
+            return;
         }
+        activeTab = tab;
     }
 
     function handleLogin() {
-        isLoggedIn = true;
+        alert('현재 개발중인 서비스로 지금은 여행 일정 추천만 사용 가능합니다.');
         showLoginModal = false;
     }
 </script>
 
-<div class="min-h-screen bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50">
+<div class="min-h-screen bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50 overscroll-none">
+<style>
+  body { 
+    overscroll-behavior: none; 
+    overflow-x: hidden;
+  }
+  html {
+    overflow-x: hidden;
+  }
+</style>
     <!-- Navigation -->
-    <nav class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-40">
+    <nav class="bg-white/90 backdrop-blur-md shadow-sm fixed top-0 left-0 right-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-8">
@@ -240,7 +249,7 @@
                         </div>
                     {:else}
                         <button
-                                onclick={() => showLoginModal = true}
+                                onclick={() => alert('현재 개발중인 서비스로 지금은 여행 일정 추천만 사용 가능합니다.')}
                                 class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gradient-to-r from-rose-600 to-orange-500 text-white hover:from-rose-700 hover:to-orange-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105"
                         >
                             <LogIn class="w-4 h-4" />
@@ -279,20 +288,36 @@
         </div>
     {/if}
 
+    <!-- Loading Overlay -->
+    {#if loading}
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 shadow-2xl text-center">
+                <div class="w-20 h-20 bg-gradient-to-br from-rose-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <div class="animate-spin rounded-full h-10 w-10 border-4 border-rose-200 border-t-rose-600"></div>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">여행 계획 생성 중</h3>
+                <p class="text-gray-600">잠시만 기다려주세요...</p>
+                <div class="mt-4 bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div class="bg-gradient-to-r from-rose-500 to-orange-500 h-full rounded-full animate-pulse"></div>
+                </div>
+            </div>
+        </div>
+    {/if}
+
     <!-- Main Content -->
     {#if activeTab === 'planner'}
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-4" style="height: calc(100vh - 5rem);" class:pointer-events-none={loading} class:opacity-75={loading}>
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 h-full">
                 <!-- Left Panel - Input Form -->
-                <div class="bg-white rounded-2xl shadow-lg p-6">
-                    <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <div class="bg-white rounded-2xl shadow-lg p-4 h-full flex flex-col">
+                    <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center flex-shrink-0">
                         <MapPin class="w-5 h-5 mr-2 text-rose-600" />
                         여행 정보 입력
                     </h2>
 
-                    <div class="space-y-5">
+                    <div class="space-y-3 flex-1 overflow-y-auto pr-2">
                         <!-- 여행지 -->
-                        <div>
+                        <div class="flex-shrink-0">
                             <label for="city-search" class="block text-sm font-medium text-gray-700 mb-2">
                                 여행지 *
                             </label>
@@ -307,7 +332,7 @@
                                 <Search class="absolute right-3 top-3.5 w-5 h-5 text-gray-400" />
 
                                 {#if showCityDropdown && cities.length > 0}
-                                    <div class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                                    <div class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
                                         {#each cities as city}
                                             <button
                                                     onclick={() => handleCitySelect(city)}
@@ -323,7 +348,7 @@
                         </div>
 
                         <!-- 여행 기간 -->
-                        <div>
+                        <div class="flex-shrink-0">
                             <label for="duration" class="block text-sm font-medium text-gray-700 mb-2">
                                 여행 기간 (일) *
                             </label>
@@ -338,16 +363,16 @@
                         </div>
 
                         <!-- 선택 정보 -->
-                        <div class="pt-4 border-t border-gray-100">
-                            <h3 class="text-sm font-semibold text-gray-600 mb-4">선택 정보</h3>
+                        <div class="pt-2 border-t border-gray-100 flex-shrink-0">
+                            <h3 class="text-sm font-semibold text-gray-600 mb-2">선택 정보</h3>
 
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label for="age-group" class="block text-sm font-medium text-gray-700 mb-2">연령대</label>
+                                    <label for="age-group" class="block text-xs font-medium text-gray-700 mb-1">연령대</label>
                                     <select
                                             id="age-group"
                                             bind:value={formData.ageGroup}
-                                            class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500"
+                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 text-sm"
                                     >
                                         {#each ageGroups as age}
                                             <option value={age}>{age}</option>
@@ -356,25 +381,25 @@
                                 </div>
 
                                 <div>
-                                    <label for="group-size" class="block text-sm font-medium text-gray-700 mb-2">인원 수</label>
+                                    <label for="group-size" class="block text-xs font-medium text-gray-700 mb-1">인원 수</label>
                                     <input
                                             id="group-size"
                                             type="number"
                                             min="1"
                                             max="20"
                                             bind:value={formData.groupSize}
-                                            class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500"
+                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 text-sm"
                                     />
                                 </div>
                             </div>
 
-                            <div class="mt-4 space-y-4">
+                            <div class="mt-2 space-y-2">
                                 <div>
-                                    <label for="travel-purpose" class="block text-sm font-medium text-gray-700 mb-2">여행 목적</label>
+                                    <label for="travel-purpose" class="block text-xs font-medium text-gray-700 mb-1">여행 목적</label>
                                     <select
                                             id="travel-purpose"
                                             bind:value={formData.purpose}
-                                            class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500"
+                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 text-sm"
                                     >
                                         <option value="">선택하세요</option>
                                         {#each purposes as purpose}
@@ -384,11 +409,11 @@
                                 </div>
 
                                 <div>
-                                    <label for="travel-type" class="block text-sm font-medium text-gray-700 mb-2">여행 타입</label>
+                                    <label for="travel-type" class="block text-xs font-medium text-gray-700 mb-1">여행 타입</label>
                                     <select
                                             id="travel-type"
                                             bind:value={formData.travelType}
-                                            class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500"
+                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 text-sm"
                                     >
                                         <option value="">선택하세요</option>
                                         {#each types as type}
@@ -399,15 +424,18 @@
                             </div>
                         </div>
 
+                    </div>
+                    
+                    <div class="flex-shrink-0 pt-3 border-t border-gray-100">
                         <button
                                 onclick={handleGeneratePlan}
                                 disabled={loading}
-                                class="w-full py-3 bg-gradient-to-r from-rose-600 to-orange-500 text-white font-medium rounded-lg hover:from-rose-700 hover:to-orange-600 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg"
+                                class="w-full py-2.5 bg-gradient-to-r from-rose-600 to-orange-500 text-white font-medium rounded-lg hover:from-rose-700 hover:to-orange-600 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg relative"
                         >
                             {#if loading}
                                 <div class="flex items-center">
                                     <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                    생성 중...
+                                    여행 계획 생성 중...
                                 </div>
                             {:else}
                                 <Compass class="w-5 h-5 mr-2" />
@@ -418,14 +446,15 @@
                 </div>
 
                 <!-- Right Panel - Output -->
-                <div class="bg-white rounded-2xl shadow-lg p-6">
-                    <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <div class="bg-white rounded-2xl shadow-lg p-5 h-full flex flex-col">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center flex-shrink-0">
                         <Calendar class="w-5 h-5 mr-2 text-orange-600" />
                         여행 일정 추천
                     </h2>
 
+                    <div class="flex-1 overflow-hidden">
                     {#if travelPlan}
-                        <div class="space-y-4">
+                        <div class="space-y-3 h-full">
                             <!-- Overview -->
                             <div class="bg-gradient-to-r from-rose-50 to-orange-50 rounded-lg p-4">
                                 <h3 class="font-semibold text-gray-800 mb-2">{formData.destination}</h3>
@@ -442,7 +471,7 @@
                             </div>
 
                             <!-- Daily Schedule -->
-                            <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
+                            <div class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
                                 {#each travelPlan.itinerary as dayPlan}
                                     <div class="border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow">
                                         <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
@@ -515,7 +544,7 @@
                             {/if}
                         </div>
                     {:else}
-                        <div class="flex flex-col items-center justify-center h-96 text-gray-400">
+                        <div class="flex flex-col items-center justify-center h-full text-gray-400">
                             <div class="w-24 h-24 bg-gradient-to-br from-rose-100 to-orange-100 rounded-full flex items-center justify-center mb-4">
                                 <MapPin class="w-12 h-12 text-rose-400" />
                             </div>
@@ -525,6 +554,7 @@
                             </p>
                         </div>
                     {/if}
+                    </div>
                 </div>
             </div>
         </div>
