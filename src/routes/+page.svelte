@@ -26,6 +26,16 @@
 
     const ageGroups = ['10-20대', '20-30대', '30-40대', '40-50대', '50대 이상'];
 
+    // API URL 설정
+    const getApiUrl = () => {
+        if (typeof window !== 'undefined') {
+            return window.location.hostname === 'localhost' 
+                ? 'http://localhost:8080'
+                : 'https://api.tripwand.online';
+        }
+        return 'https://api.tripwand.online'; // SSR fallback
+    };
+
     // API 인터페이스
     const API = {
         searchCities: async (query) => {
@@ -69,7 +79,7 @@
         },
 
         generateTravelPlan: async (params) => {
-            const response = await fetch('http://localhost:8080/api/v1/travel/generate', {
+            const response = await fetch(`${getApiUrl()}/api/v1/travel/generate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
