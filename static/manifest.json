@@ -1,0 +1,21 @@
+{
+  "name": "TripWand - AI 여행 계획 생성기",
+  "short_name": "TripWand",
+  "description": "AI 기반 맞춤형 여행 계획 생성 서비스",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f43f5e",
+  "orientation": "portrait-primary",
+  "categories": ["travel", "productivity"],
+  "lang": "ko",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

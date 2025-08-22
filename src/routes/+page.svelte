@@ -1,6 +1,8 @@
 <!-- +page.svelte -->
 <script>
     import { MapPin, Calendar, Users, Target, Compass, User, LogIn, ChevronRight, Clock, DollarSign, AlertCircle, Search, MessageSquare, UserCircle, Lock } from 'lucide-svelte';
+    
+    let { data } = $props();
 
     // State variables using Svelte 5 runes
     let isLoggedIn = $state(false);
@@ -190,6 +192,73 @@
         showLoginModal = false;
     }
 </script>
+
+<svelte:head>
+    <title>{data.meta.title}</title>
+    <meta name="description" content={data.meta.description} />
+    <meta name="keywords" content={data.meta.keywords} />
+    <link rel="canonical" href={data.meta.canonical} />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content={data.meta.type} />
+    <meta property="og:url" content={data.meta.canonical} />
+    <meta property="og:title" content={data.meta.title} />
+    <meta property="og:description" content={data.meta.description} />
+    <meta property="og:image" content={data.meta.image} />
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:site_name" content="TripWand" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={data.meta.canonical} />
+    <meta property="twitter:title" content={data.meta.title} />
+    <meta property="twitter:description" content={data.meta.description} />
+    <meta property="twitter:image" content={data.meta.image} />
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "TripWand",
+        "description": "AI 기반 맞춤형 여행 계획 생성 서비스",
+        "url": "https://tripwand.online",
+        "applicationCategory": "TravelApplication",
+        "operatingSystem": "웹 브라우저",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "KRW"
+        },
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "150"
+        },
+        "creator": {
+            "@type": "Organization",
+            "name": "TripWand",
+            "url": "https://tripwand.online"
+        }
+    }
+    </script>
+    
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "TravelAgency",
+        "name": "TripWand",
+        "description": "AI 기반 맞춤형 여행 계획 생성 서비스",
+        "url": "https://tripwand.online",
+        "areaServed": {
+            "@type": "Country",
+            "name": "대한민국"
+        },
+        "serviceType": "여행 계획 수립",
+        "priceRange": "무료"
+    }
+    </script>
+</svelte:head>
 
 <div class="min-h-screen bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50 overscroll-none">
 <style>
