@@ -279,19 +279,15 @@
     </script>
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50 overscroll-none">
+<div class="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50 overscroll-none">
+
 <style>
-  body { 
-    overscroll-behavior: none; 
-    overflow-x: hidden;
-  }
-  html {
-    overflow-x: hidden;
-  }
+    body { overscroll-behavior: none; overflow-x: hidden; }
+    html { overflow-x: hidden; }
 </style>
     <!-- Navigation -->
     <nav class="bg-white/90 backdrop-blur-md shadow-sm fixed top-0 left-0 right-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="w-full mx-auto px-4 sm:px-6 lg:px-8 max-w-none xl:max-w-[88rem] 2xl:max-w-[96rem]">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-8">
                     <a href="https://tripwand.online" class="flex items-center space-x-3 group">
@@ -440,10 +436,12 @@
 
     <!-- Main Content -->
     {#if activeTab === 'planner'}
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-4" style="height: calc(100vh - 5rem);" class:pointer-events-none={loading} class:opacity-75={loading}>
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 h-full">
+				<main class="w-full mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-4 flex-1 max-w-none xl:max-w-[88rem] 2xl:max-w-[96rem]"
+							class:pointer-events-none={loading}
+							class:opacity-75={loading}>
+            <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 h-full">
                 <!-- Left Panel - Input Form -->
-                <div class="bg-white rounded-2xl shadow-lg p-4 h-full flex flex-col overflow-visible">
+                <div class="bg-white rounded-2xl shadow-lg p-4 h-full flex flex-col overflow-visible xl:col-span-6">
                     <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center flex-shrink-0">
                         <MapPin class="w-5 h-5 mr-2 text-rose-600" />
                         {t('form.inputTravel', currentLanguage)}
@@ -580,7 +578,7 @@
                 </div>
 
                 <!-- Right Panel - Output -->
-                <div class="bg-white rounded-2xl shadow-lg p-5 h-full flex flex-col">
+                <div class="bg-white rounded-2xl shadow-lg p-5 h-full flex flex-col xl:col-span-6">
                     <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center flex-shrink-0">
                         <Calendar class="w-5 h-5 mr-2 text-orange-600" />
                         {t('result.title', currentLanguage)}
@@ -605,7 +603,10 @@
                             </div>
 
                             <!-- Daily Schedule -->
-                            <div class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+														<div class="space-y-3 overflow-y-auto pr-2
+																	max-h-[calc(100vh-22rem)]
+																	md:max-h-[calc(100vh-18rem)]
+																	lg:max-h-[calc(100vh-16rem)]">
                                 {#each travelPlan.itinerary as dayPlan}
                                     <div class="border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow">
                                         <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
@@ -692,7 +693,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     {/if}
 
     {#if activeTab === 'chat' && isLoggedIn}
@@ -717,7 +718,7 @@
     
     <!-- Footer -->
     <footer class="bg-white border-t border-gray-200 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-none xl:max-w-[88rem] 2xl:max-w-[96rem]">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Logo & Description -->
                 <div class="flex flex-col space-y-4">
