@@ -1,6 +1,7 @@
 <!-- +page.svelte -->
 <script>
     import { MapPin, Calendar, Users, Target, Compass, User, LogIn, ChevronRight, Clock, DollarSign, AlertCircle, Search, MessageSquare, UserCircle, Lock } from 'lucide-svelte';
+    import favicon from '$lib/assets/favicon.svg';
     
     let { data } = $props();
 
@@ -275,17 +276,20 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-8">
-                    <div class="flex items-center space-x-2">
-                        <h1 class="text-2xl font-bold bg-gradient-to-r from-rose-600 to-orange-500 bg-clip-text text-transparent">
-                            TripWand
-                        </h1>
-                        <span class="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
-              Beta
-            </span>
-                        <span class="hidden lg:inline text-xs text-gray-500">
-              개발 중인 서비스로 예고 없이 변경되거나 종료될 수 있습니다
-            </span>
-                    </div>
+                    <a href="https://tripwand.online" class="flex items-center space-x-3 group">
+                        <img src={favicon} alt="TripWand 로고" class="w-8 h-8 transition-transform group-hover:scale-110" />
+                        <div class="flex items-center space-x-2">
+                            <h1 class="text-2xl font-bold bg-gradient-to-r from-rose-600 to-orange-500 bg-clip-text text-transparent group-hover:from-rose-700 group-hover:to-orange-600 transition-all">
+                                TripWand
+                            </h1>
+                            <span class="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
+                  Beta
+                </span>
+                            <span class="hidden lg:inline text-xs text-gray-500">
+                  개발 중인 서비스로 예고 없이 변경되거나 종료될 수 있습니다
+                </span>
+                        </div>
+                    </a>
                     <div class="hidden md:flex space-x-1">
                         <button
                                 onclick={() => handleTabClick('planner')}
