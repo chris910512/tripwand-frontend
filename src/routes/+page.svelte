@@ -1,7 +1,8 @@
 <!-- +page.svelte -->
 <script>
-    import { MapPin, Calendar, Users, Target, Compass, User, LogIn, ChevronRight, Clock, DollarSign, AlertCircle, Search, MessageSquare, UserCircle, Lock } from 'lucide-svelte';
+    import { MapPin, Calendar, Users, Target, Compass, User, LogIn, ChevronRight, Clock, DollarSign, AlertCircle, Search, MessageSquare, UserCircle, Lock, Globe } from 'lucide-svelte';
     import favicon from '$lib/assets/favicon.svg';
+    import { detectLanguage, t, saveLanguage } from '$lib/i18n.js';
     
     let { data } = $props();
 
@@ -17,6 +18,10 @@
     let travelPlan = $state(null);
     let showLoginModal = $state(false);
     let searchTimer = null;
+    
+    // 언어 상태
+    let currentLanguage = $state('ko');
+    let showLangDropdown = $state(false);
 
     let formData = $state({
         destination: '',
@@ -113,6 +118,7 @@
 
     // Lifecycle
     $effect(() => {
+        currentLanguage = detectLanguage();
         loadData();
     });
 
@@ -189,8 +195,27 @@
     }
 
     function handleLogin() {
-        alert('현재 개발중인 서비스로 지금은 여행 일정 추천만 사용 가능합니다.');
+        alert(t('common.developingService', currentLanguage));
         showLoginModal = false;
+    }
+    
+    function handleLanguageChange(lang) {
+        currentLanguage = lang;
+        saveLanguage(lang);
+        showLangDropdown = false;
+        
+        // HTML lang 속성 업데이트
+        if (typeof document !== 'undefined') {
+            document.documentElement.lang = lang;
+        }
+    }
+    
+    function handleTabClick(tab) {
+        if (tab === 'chat' || tab === 'profile') {
+            alert(t('common.developingService', currentLanguage));
+            return;
+        }
+        activeTab = tab;
     }
 </script>
 
@@ -298,7 +323,7 @@
                 : 'text-gray-600 hover:bg-gray-100'}"
                         >
                             <MapPin class="w-4 h-4" />
-                            <span>여행 일정 추천</span>
+                            <span>{t('nav.planner', currentLanguage)}</span>
                         </button>
                         <button
                                 onclick={() => handleTabClick('chat')}
@@ -307,7 +332,7 @@
                 : 'text-gray-600 hover:bg-gray-100'}"
                         >
                             <MessageSquare class="w-4 h-4" />
-                            <span>채팅방</span>
+                            <span>{t('nav.chat', currentLanguage)}</span>
                             {#if !isLoggedIn}<Lock class="w-3 h-3" />{/if}
                         </button>
                         <button
@@ -317,28 +342,61 @@
                 : 'text-gray-600 hover:bg-gray-100'}"
                         >
                             <UserCircle class="w-4 h-4" />
-                            <span>내 프로필</span>
+                            <span>{t('nav.profile', currentLanguage)}</span>
                             {#if !isLoggedIn}<Lock class="w-3 h-3" />{/if}
                         </button>
                     </div>
                 </div>
 
-                <!-- Login Status -->
-                <div class="flex items-center">
-                    {#if isLoggedIn}
-                        <div class="flex items-center space-x-3 px-4 py-2 rounded-lg bg-gradient-to-r from-rose-50 to-orange-50">
-                            <User class="w-5 h-5 text-rose-600" />
-                            <span class="text-sm font-medium">사용자님</span>
-                        </div>
-                    {:else}
+                <!-- Language & Login -->
+                <div class="flex items-center space-x-3">
+                    <!-- Language Switcher -->
+                    <div class="relative">
                         <button
-                                onclick={() => alert('현재 개발중인 서비스로 지금은 여행 일정 추천만 사용 가능합니다.')}
-                                class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gradient-to-r from-rose-600 to-orange-500 text-white hover:from-rose-700 hover:to-orange-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105"
+                                onclick={() => showLangDropdown = !showLangDropdown}
+                                class="flex items-center space-x-1 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-all"
                         >
-                            <LogIn class="w-4 h-4" />
-                            <span>로그인</span>
+                            <Globe class="w-4 h-4" />
+                            <span class="text-sm font-medium">{currentLanguage.toUpperCase()}</span>
                         </button>
-                    {/if}
+                        
+                        {#if showLangDropdown}
+                            <div class="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                                <button
+                                        onclick={() => handleLanguageChange('ko')}
+                                        class="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors flex items-center space-x-2 {currentLanguage === 'ko' ? 'bg-rose-50 text-rose-700' : 'text-gray-700'}"
+                                >
+                                    <span>🇰🇷</span>
+                                    <span class="text-sm">한국어</span>
+                                </button>
+                                <button
+                                        onclick={() => handleLanguageChange('en')}
+                                        class="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors flex items-center space-x-2 {currentLanguage === 'en' ? 'bg-rose-50 text-rose-700' : 'text-gray-700'}"
+                                >
+                                    <span>🇺🇸</span>
+                                    <span class="text-sm">English</span>
+                                </button>
+                            </div>
+                        {/if}
+                    </div>
+                    
+                    <!-- Login Status -->
+                    <div class="flex items-center">
+                        {#if isLoggedIn}
+                            <div class="flex items-center space-x-3 px-4 py-2 rounded-lg bg-gradient-to-r from-rose-50 to-orange-50">
+                                <User class="w-5 h-5 text-rose-600" />
+                                <span class="text-sm font-medium">{t('nav.user', currentLanguage)}</span>
+                            </div>
+                        {:else}
+                            <button
+                                    onclick={handleLogin}
+                                    class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gradient-to-r from-rose-600 to-orange-500 text-white hover:from-rose-700 hover:to-orange-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105"
+                            >
+                                <LogIn class="w-4 h-4" />
+                                <span>{t('nav.login', currentLanguage)}</span>
+                            </button>
+                        {/if}
+                    </div>
                 </div>
             </div>
         </div>
@@ -395,21 +453,21 @@
                 <div class="bg-white rounded-2xl shadow-lg p-4 h-full flex flex-col overflow-visible">
                     <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center flex-shrink-0">
                         <MapPin class="w-5 h-5 mr-2 text-rose-600" />
-                        여행 정보 입력
+                        {t('form.inputTravel', currentLanguage)}
                     </h2>
 
                     <div class="space-y-3 flex-1 overflow-y-auto pr-1 pl-1">
                         <!-- 여행지 -->
                         <div class="flex-shrink-0">
                             <label for="city-search" class="block text-sm font-medium text-gray-700 mb-2">
-                                여행지 *
+                                {t('form.destination', currentLanguage)} *
                             </label>
                             <div class="relative">
                                 <input
                                         id="city-search"
                                         type="text"
                                         bind:value={citySearch}
-                                        placeholder="도시명을 검색하세요..."
+                                        placeholder={t('form.destinationPlaceholder', currentLanguage)}
                                         class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent focus:ring-offset-2 transition-all"
                                 />
                                 <Search class="absolute right-3 top-3.5 w-5 h-5 text-gray-400" />
@@ -433,7 +491,7 @@
                         <!-- 여행 기간 -->
                         <div class="flex-shrink-0">
                             <label for="duration" class="block text-sm font-medium text-gray-700 mb-2">
-                                여행 기간 (일) *
+                                {t('form.duration', currentLanguage)} *
                             </label>
                             <input
                                     id="duration"
