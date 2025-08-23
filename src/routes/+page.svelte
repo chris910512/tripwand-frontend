@@ -186,14 +186,6 @@
         }
     }
 
-    function handleTabClick(tab) {
-        if (tab === 'chat' || tab === 'profile') {
-            alert('현재 개발중인 서비스로 지금은 여행 일정 추천만 사용 가능합니다.');
-            return;
-        }
-        activeTab = tab;
-    }
-
     function handleLogin() {
         alert(t('common.developingService', currentLanguage));
         showLoginModal = false;
