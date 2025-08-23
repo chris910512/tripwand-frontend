@@ -98,7 +98,8 @@
                     age_group: params.ageGroup,
                     group_size: params.groupSize,
                     purpose: params.purpose,
-                    travel_type: params.travelType
+                    travel_type: params.travelType,
+                    language: currentLanguage
                 })
             });
 
@@ -303,7 +304,7 @@
                   Beta
                 </span>
                             <span class="hidden lg:inline text-xs text-gray-500">
-                  개발 중인 서비스로 예고 없이 변경되거나 종료될 수 있습니다
+                  {t('main.betaNotice', currentLanguage)}
                 </span>
                         </div>
                     </a>
@@ -428,8 +429,8 @@
                 <div class="w-20 h-20 bg-gradient-to-br from-rose-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
                     <div class="animate-spin rounded-full h-10 w-10 border-4 border-rose-200 border-t-rose-600"></div>
                 </div>
-                <h3 class="text-xl font-bold text-gray-800 mb-2">여행 계획 생성 중</h3>
-                <p class="text-gray-600">잠시만 기다려주세요...</p>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">{t('form.generatingTitle', currentLanguage)}</h3>
+                <p class="text-gray-600">{t('common.loading', currentLanguage)}</p>
                 <div class="mt-4 bg-gray-200 rounded-full h-2 overflow-hidden">
                     <div class="bg-gradient-to-r from-rose-500 to-orange-500 h-full rounded-full animate-pulse"></div>
                 </div>
@@ -497,24 +498,24 @@
 
                         <!-- 선택 정보 -->
                         <div class="pt-2 border-t border-gray-100 flex-shrink-0">
-                            <h3 class="text-sm font-semibold text-gray-600 mb-2">선택 정보</h3>
+                            <h3 class="text-sm font-semibold text-gray-600 mb-2">{t('form.optionalInfo', currentLanguage)}</h3>
 
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label for="age-group" class="block text-xs font-medium text-gray-700 mb-1">연령대</label>
+                                    <label for="age-group" class="block text-xs font-medium text-gray-700 mb-1">{t('form.ageGroup', currentLanguage)}</label>
                                     <select
                                             id="age-group"
                                             bind:value={formData.ageGroup}
                                             class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 focus:border-transparent text-sm transition-all"
                                     >
                                         {#each ageGroups as age}
-                                            <option value={age}>{age}</option>
+                                            <option value={age}>{t(`options.ageGroups.${age}`, currentLanguage)}</option>
                                         {/each}
                                     </select>
                                 </div>
 
                                 <div>
-                                    <label for="group-size" class="block text-xs font-medium text-gray-700 mb-1">인원 수</label>
+                                    <label for="group-size" class="block text-xs font-medium text-gray-700 mb-1">{t('form.groupSize', currentLanguage)}</label>
                                     <input
                                             id="group-size"
                                             type="number"
@@ -528,29 +529,29 @@
 
                             <div class="mt-2 space-y-2">
                                 <div>
-                                    <label for="travel-purpose" class="block text-xs font-medium text-gray-700 mb-1">여행 목적</label>
+                                    <label for="travel-purpose" class="block text-xs font-medium text-gray-700 mb-1">{t('form.purpose', currentLanguage)}</label>
                                     <select
                                             id="travel-purpose"
                                             bind:value={formData.purpose}
                                             class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 focus:border-transparent text-sm transition-all"
                                     >
-                                        <option value="">선택하세요</option>
+                                        <option value="">{t('form.selectOption', currentLanguage)}</option>
                                         {#each purposes as purpose}
-                                            <option value={purpose.name}>{purpose.name}</option>
+                                            <option value={purpose.name}>{t(`options.purposes.${purpose.name}`, currentLanguage)}</option>
                                         {/each}
                                     </select>
                                 </div>
 
                                 <div>
-                                    <label for="travel-type" class="block text-xs font-medium text-gray-700 mb-1">여행 타입</label>
+                                    <label for="travel-type" class="block text-xs font-medium text-gray-700 mb-1">{t('form.travelType', currentLanguage)}</label>
                                     <select
                                             id="travel-type"
                                             bind:value={formData.travelType}
                                             class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 focus:border-transparent text-sm transition-all"
                                     >
-                                        <option value="">선택하세요</option>
+                                        <option value="">{t('form.selectOption', currentLanguage)}</option>
                                         {#each types as type}
-                                            <option value={type.name}>{type.name}</option>
+                                            <option value={type.name}>{t(`options.types.${type.name}`, currentLanguage)}</option>
                                         {/each}
                                     </select>
                                 </div>
@@ -568,11 +569,11 @@
                             {#if loading}
                                 <div class="flex items-center">
                                     <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                    여행 계획 생성 중...
+                                    {t('form.generating', currentLanguage)}
                                 </div>
                             {:else}
                                 <Compass class="w-5 h-5 mr-2" />
-                                여행 계획 생성하기
+                                {t('form.generatePlan', currentLanguage)}
                             {/if}
                         </button>
                     </div>
@@ -582,7 +583,7 @@
                 <div class="bg-white rounded-2xl shadow-lg p-5 h-full flex flex-col">
                     <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center flex-shrink-0">
                         <Calendar class="w-5 h-5 mr-2 text-orange-600" />
-                        여행 일정 추천
+                        {t('result.title', currentLanguage)}
                     </h2>
 
                     <div class="flex-1 overflow-hidden">
@@ -682,8 +683,9 @@
                                 <MapPin class="w-12 h-12 text-rose-400" />
                             </div>
                             <p class="text-center text-gray-600">
-                                왼쪽에서 여행 정보를 입력하고<br />
-                                계획 생성 버튼을 클릭해주세요
+                                {#each t('result.placeholder', currentLanguage).split('\\n') as line}
+                                    {line}<br />
+                                {/each}
                             </p>
                         </div>
                     {/if}
@@ -712,4 +714,77 @@
             </div>
         </div>
     {/if}
+    
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Logo & Description -->
+                <div class="flex flex-col space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <img src={favicon} alt="TripWand 로고" class="w-8 h-8" />
+                        <h3 class="text-lg font-bold bg-gradient-to-r from-rose-600 to-orange-500 bg-clip-text text-transparent">
+                            TripWand
+                        </h3>
+                    </div>
+                    <p class="text-sm text-gray-600 max-w-sm">
+                        {t('footer.description', currentLanguage)}
+                    </p>
+                </div>
+                
+                <!-- Contact Info -->
+                <div class="flex flex-col space-y-4">
+                    <h4 class="text-base font-semibold text-gray-800">{t('footer.contact', currentLanguage)}</h4>
+                    <div class="space-y-3">
+                        <!-- Email -->
+                        <div class="flex items-center space-x-3">
+                            <div class="w-5 h-5 bg-gradient-to-r from-rose-500 to-orange-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-xs">@</span>
+                            </div>
+                            <a href="mailto:sungmin.park.lab@gmail.com" class="text-sm text-gray-600 hover:text-rose-600 transition-colors">
+															sungmin.park.lab@gmail.com
+                            </a>
+                        </div>
+                        
+                        <!-- Google Form -->
+                        <div class="flex items-center space-x-3">
+                            <div class="w-5 h-5 bg-gradient-to-r from-rose-500 to-orange-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-xs">📝</span>
+                            </div>
+                            <a href="https://docs.google.com/forms/d/1vaOBrXUbunoGOEe2gPV6oS9UApMxvnTC-hc0fJsvSMw/edit" target="_blank" rel="noopener noreferrer"
+                               class="text-sm text-gray-600 hover:text-rose-600 transition-colors">
+                                {t('footer.feedback', currentLanguage)}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Service Info -->
+                <div class="flex flex-col space-y-4">
+                    <h4 class="text-base font-semibold text-gray-800">{t('footer.service', currentLanguage)}</h4>
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
+                                Beta
+                            </span>
+                            <span class="text-sm text-gray-600">{t('footer.version', currentLanguage)}</span>
+                        </div>
+                        <p class="text-xs text-gray-500">
+                            {t('main.betaNotice', currentLanguage)}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Copyright -->
+            <div class="border-t border-gray-200 mt-8 pt-6 flex flex-col sm:flex-row justify-between items-center">
+                <p class="text-xs text-gray-500">
+                    © 2024 TripWand. {t('footer.rights', currentLanguage)}
+                </p>
+                <p class="text-xs text-gray-400 mt-2 sm:mt-0">
+                    {t('footer.poweredBy', currentLanguage)}
+                </p>
+            </div>
+        </div>
+    </footer>
 </div>
