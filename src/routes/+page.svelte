@@ -1,10 +1,70 @@
 <!-- +page.svelte -->
 <script>
-    import { MapPin, Calendar, Users, Target, Compass, User, LogIn, ChevronRight, Clock, DollarSign, AlertCircle, Search, MessageSquare, UserCircle, Lock, Globe } from 'lucide-svelte';
+    import { MapPin, Calendar, Users, Target, Compass, User, LogIn, ChevronRight, Clock, DollarSign, AlertCircle, Search, MessageSquare, UserCircle, Lock, Globe, Send, Hash, Smile, MoreVertical } from 'lucide-svelte';
     import favicon from '$lib/assets/favicon.svg';
     import { detectLanguage, t, saveLanguage } from '$lib/i18n.js';
+    import { dev } from '$app/environment';
     
     let { data } = $props();
+
+    // Debug logging helper - only in development
+    const debugLog = (...args) => {
+        if (dev) console.log(...args);
+    };
+
+    // 닉네임 기반 고유 색상 생성
+    function generateUserColor(nickname, lightMode = false) {
+        if (!nickname) return lightMode ? 'from-gray-100 to-gray-200' : 'from-gray-400 to-gray-500';
+        
+        // 닉네임을 해시로 변환
+        let hash = 0;
+        for (let i = 0; i < nickname.length; i++) {
+            hash = nickname.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        
+        // 색상 팔레트 (더 다양하고 부드러운 색상)
+        const colorPalettes = lightMode ? [
+            'from-red-50 to-red-100',
+            'from-orange-50 to-orange-100', 
+            'from-amber-50 to-amber-100',
+            'from-lime-50 to-lime-100',
+            'from-green-50 to-green-100',
+            'from-emerald-50 to-emerald-100',
+            'from-teal-50 to-teal-100',
+            'from-cyan-50 to-cyan-100',
+            'from-sky-50 to-sky-100',
+            'from-blue-50 to-blue-100',
+            'from-indigo-50 to-indigo-100',
+            'from-violet-50 to-violet-100',
+            'from-purple-50 to-purple-100',
+            'from-fuchsia-50 to-fuchsia-100',
+            'from-pink-50 to-pink-100',
+            'from-rose-50 to-rose-100'
+        ] : [
+            'from-red-400 to-red-500',
+            'from-orange-400 to-orange-500', 
+            'from-amber-400 to-amber-500',
+            'from-lime-400 to-lime-500',
+            'from-green-400 to-green-500',
+            'from-emerald-400 to-emerald-500',
+            'from-teal-400 to-teal-500',
+            'from-cyan-400 to-cyan-500',
+            'from-sky-400 to-sky-500',
+            'from-blue-400 to-blue-500',
+            'from-indigo-400 to-indigo-500',
+            'from-violet-400 to-violet-500',
+            'from-purple-400 to-purple-500',
+            'from-fuchsia-400 to-fuchsia-500',
+            'from-pink-400 to-pink-500',
+            'from-rose-400 to-rose-500'
+        ];
+        
+        const index = Math.abs(hash) % colorPalettes.length;
+        const selectedColor = colorPalettes[index];
+        
+        debugLog(`🎨 Generated color for "${nickname}": ${selectedColor} (hash: ${hash}, index: ${index})`);
+        return selectedColor;
+    }
 
     // State variables using Svelte 5 runes
     let isLoggedIn = $state(false);
@@ -22,6 +82,28 @@
     // 언어 상태
     let currentLanguage = $state('ko');
     let showLangDropdown = $state(false);
+    
+    // 채팅방 상태
+    let selectedRoom = $state('UK');
+    let messages = $state([]);
+    let newMessage = $state('');
+    let ws = $state(null);
+    let chatSession = $state(null);
+    let isConnected = $state(false);
+    let userNickname = $state('');
+    let isComposing = $state(false);
+    // 기본 채팅방 데이터
+    const defaultChatRooms = [
+        { id: 'UK', name: 'United Kingdom', flag: '🇬🇧', user_count: 0 },
+        { id: 'US', name: 'United States', flag: '🇺🇸', user_count: 0 },
+        { id: 'France', name: 'France', flag: '🇫🇷', user_count: 0 },
+        { id: 'Germany', name: 'Germany', flag: '🇩🇪', user_count: 0 },
+        { id: 'Spain', name: 'Spain', flag: '🇪🇸', user_count: 0 },
+        { id: 'Italy', name: 'Italy', flag: '🇮🇹', user_count: 0 },
+        { id: 'Japan', name: 'Japan', flag: '🇯🇵', user_count: 0 }
+    ];
+    
+    let actualChatRooms = $state(defaultChatRooms); // API에서 로드된 실제 채팅방 데이터
 
     let formData = $state({
         destination: '',
@@ -37,8 +119,8 @@
     // API URL 설정
     const getApiUrl = () => {
         if (typeof window !== 'undefined') {
-            return window.location.hostname === 'localhost' 
-                ? 'http://localhost:8080'
+            return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? 'http://127.0.0.1:8080'
                 : 'https://api.tripwand.online';
         }
         return 'https://api.tripwand.online'; // SSR fallback
@@ -114,13 +196,420 @@
             }
 
             return result.data;
+        },
+        
+        // 채팅 API
+        createSession: async () => {
+            // 새로운 지문 생성 (매번 새로 생성)
+            const fingerprint = generateFingerprint();
+            
+            // 브라우저별 고유 localStorage 키 생성
+            const browserKey = `tripwand_chat_session_${navigator.userAgent.substring(0, 20).replace(/[^a-zA-Z0-9]/g, '')}`;
+            let localStorageKey = localStorage.getItem(browserKey) || '';
+            
+            debugLog('🔧 Browser-specific localStorage key:', browserKey);
+            
+            debugLog('🔧 Creating session with API:', getApiUrl());
+            debugLog('🔧 Fingerprint:', fingerprint);
+            debugLog('🔧 Fingerprint length:', fingerprint.length);
+            debugLog('🔧 LocalStorage key:', localStorageKey || 'EMPTY (new session)');
+            debugLog('🔧 Browser info:', {
+                userAgent: navigator.userAgent.substring(0, 100) + '...',
+                language: navigator.language,
+                screen: `${screen.width}x${screen.height}`,
+                platform: navigator.platform,
+                cookiesEnabled: navigator.cookieEnabled,
+                isPrivate: !window.indexedDB || navigator.webdriver
+            });
+            
+            const response = await fetch(`${getApiUrl()}/api/v1/chat/sessions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    browser_fingerprint: fingerprint,
+                    localstorage_key: localStorageKey
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to create session: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            debugLog('✅ Session created:', result);
+            
+            if (result.success) {
+                // 브라우저별 고유 키로 저장
+                const browserKey = `tripwand_chat_session_${navigator.userAgent.substring(0, 20).replace(/[^a-zA-Z0-9]/g, '')}`;
+                localStorage.setItem(browserKey, result.localstorage_key);
+                debugLog('✅ Session saved to localStorage with key:', browserKey);
+                return result;
+            }
+            throw new Error('Session creation failed');
+        },
+        
+        loadChatRooms: async () => {
+            debugLog('🔧 Loading chat rooms from:', getApiUrl());
+            
+            try {
+                const response = await fetch(`${getApiUrl()}/api/v1/chat/rooms`);
+                if (!response.ok) {
+                    debugLog('⚠️ Failed to load rooms from API, using fallback');
+                    return defaultChatRooms;
+                }
+                
+                const result = await response.json();
+                debugLog('✅ Chat rooms loaded:', result);
+                
+                return result.success ? result.rooms : defaultChatRooms;
+            } catch (error) {
+                debugLog('⚠️ API request failed, using fallback:', error);
+                return defaultChatRooms;
+            }
+        },
+        
+        loadMessageHistory: async (room, page = 1, limit = 50) => {
+            const response = await fetch(`${getApiUrl()}/api/v1/chat/rooms/${room}/messages?page=${page}&limit=${limit}`);
+            if (!response.ok) return [];
+            
+            const result = await response.json();
+            return result.success ? result.messages : [];
         }
     };
+    
+    // 헬퍼 함수들
+    function generateFingerprint() {
+        if (typeof window === 'undefined') return 'fp_server';
+        
+        // 더 복잡한 캔버스 지문 생성
+        const canvas = document.createElement('canvas');
+        canvas.width = 200;
+        canvas.height = 50;
+        const ctx = canvas.getContext('2d');
+        
+        // 다양한 렌더링으로 브라우저별 차이 극대화
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = '#f60';
+        ctx.fillRect(125, 1, 62, 20);
+        ctx.fillStyle = '#069';
+        ctx.font = '11pt Arial';
+        ctx.fillText('TripWand 채팅 🚀', 2, 15);
+        ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+        ctx.font = '18pt Arial';
+        ctx.fillText('브라우저 지문', 4, 45);
+        
+        // WebGL 지문 (사용 가능한 경우)
+        let webglInfo = '';
+        try {
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (gl) {
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                if (debugInfo) {
+                    webglInfo = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) + '|' + 
+                              gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                }
+            }
+        } catch (e) {
+            webglInfo = 'webgl_error';
+        }
+        
+        // 더 다양한 브라우저 특성 수집
+        const fingerprint = [
+            navigator.userAgent,
+            navigator.language,
+            navigator.languages ? navigator.languages.join(',') : '',
+            screen.width + 'x' + screen.height + 'x' + screen.colorDepth,
+            screen.availWidth + 'x' + screen.availHeight,
+            new Date().getTimezoneOffset(),
+            navigator.platform || '',
+            navigator.cookieEnabled,
+            navigator.doNotTrack || '',
+            navigator.hardwareConcurrency || 0,
+            navigator.maxTouchPoints || 0,
+            window.devicePixelRatio || 1,
+            canvas.toDataURL(),
+            webglInfo,
+            // localStorage 사용 가능 여부
+            (() => {
+                try {
+                    return localStorage ? 'ls_yes' : 'ls_no';
+                } catch(e) {
+                    return 'ls_error';
+                }
+            })(),
+            // sessionStorage 사용 가능 여부  
+            (() => {
+                try {
+                    return sessionStorage ? 'ss_yes' : 'ss_no';
+                } catch(e) {
+                    return 'ss_error';
+                }
+            })(),
+            // 현재 시간을 밀리초로 (세션별 고유성 추가)
+            Date.now(),
+            // 랜덤 요소 (같은 브라우저라도 세션별로 다르게)
+            Math.random().toString(36).substring(2, 15)
+        ].join('|');
+        
+        // 지문이 너무 길어서 btoa가 실패하거나 잘릴 수 있음
+        // 더 안전한 해시 방법 사용
+        let hash = 0;
+        for (let i = 0; i < fingerprint.length; i++) {
+            const char = fingerprint.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        
+        const hashString = Math.abs(hash).toString(36) + '_' + Date.now().toString(36);
+        debugLog('🔧 Generated fingerprint components:', {
+            originalLength: fingerprint.length,
+            hash: Math.abs(hash).toString(36),
+            timestamp: Date.now().toString(36),
+            final: 'fp_' + hashString
+        });
+        
+        return 'fp_' + hashString;
+    }
+    
+    // WebSocket 연결 관리
+    function connectWebSocket() {
+        if (!chatSession) {
+            debugLog('❌ Cannot connect: no chat session');
+            return;
+        }
+        
+        // 이미 연결되어 있거나 연결 중이면 무시
+        if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
+            debugLog('⚠️ WebSocket already connected or connecting');
+            return;
+        }
+        
+        // 기존 연결이 있으면 정리
+        if (ws) {
+            ws.close();
+            ws = null;
+        }
+        
+        const wsUrl = getApiUrl().replace('http', 'ws') + '/ws/chat';
+        debugLog('🔧 Connecting to WebSocket:', wsUrl);
+        debugLog('🔧 Session info:', { 
+            session_id: chatSession.session_id, 
+            nickname: chatSession.nickname 
+        });
+        
+        try {
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                debugLog('✅ WebSocket connected successfully');
+                isConnected = true;
+                
+                // 연결 직후 즉시 방 입장 시도
+                if (ws.readyState === WebSocket.OPEN) {
+                    debugLog('🏃‍♂️ Attempting immediate room join...');
+                    joinRoom(selectedRoom);
+                } else {
+                    debugLog('⚠️ WebSocket not ready, waiting...');
+                    setTimeout(() => {
+                        if (ws && ws.readyState === WebSocket.OPEN) {
+                            joinRoom(selectedRoom);
+                        }
+                    }, 10);
+                }
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    debugLog('📥 WebSocket message received:', message);
+                    handleWebSocketMessage(message);
+                } catch (error) {
+                    if (dev) console.error('❌ Failed to parse WebSocket message:', event.data, error);
+                }
+            };
+            
+            ws.onclose = (event) => {
+                debugLog('🔌 WebSocket disconnected:', event.code, event.reason);
+                isConnected = false;
+                ws = null;
+                
+                // 정상적인 종료가 아니고 채팅 탭이 활성화되어 있으면 재연결
+                if (event.code !== 1000 && activeTab === 'chat' && chatSession) {
+                    debugLog('🔄 Scheduling reconnection in 5 seconds...');
+                    setTimeout(() => {
+                        if (activeTab === 'chat' && chatSession && (!ws || ws.readyState === WebSocket.CLOSED)) {
+                            debugLog('🔄 Attempting to reconnect...');
+                            connectWebSocket();
+                        }
+                    }, 5000);
+                }
+            };
+            
+            ws.onerror = (error) => {
+                console.error('❌ WebSocket error:', error);
+                isConnected = false;
+            };
+            
+        } catch (error) {
+            console.error('❌ Failed to create WebSocket connection:', error);
+        }
+    }
+    
+    function handleWebSocketMessage(message) {
+        switch (message.type) {
+            case 'room_joined':
+                debugLog('Joined room:', message.room);
+                break;
+            case 'new_message':
+                debugLog('📝 WebSocket new_message received:', JSON.stringify(message, null, 2));
+                // WebSocket으로 받은 새 메시지를 배열 끝에 추가
+                messages = [...messages, message];
+                debugLog('📝 Messages array after adding:', messages.length);
+                // 메시지 영역을 하단으로 스크롤
+                setTimeout(() => {
+                    const messageArea = document.querySelector('.messages-area');
+                    if (messageArea) {
+                        messageArea.scrollTop = messageArea.scrollHeight;
+                    }
+                }, 100);
+                break;
+            case 'error':
+                console.error('Chat error:', message.content);
+                break;
+            case 'ping':
+                // Send pong response
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'pong',
+                        timestamp: new Date().toISOString()
+                    }));
+                }
+                break;
+        }
+    }
+    
+    function joinRoom(room) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            debugLog('❌ Cannot join room: WebSocket not connected');
+            return;
+        }
+        
+        if (!chatSession) {
+            debugLog('❌ Cannot join room: no chat session');
+            return;
+        }
+        
+        // API 문서에 따른 정확한 형식: data 객체 내에 session_id와 nickname
+        const message = {
+            type: 'join_room',
+            room: room,
+            data: {
+                session_id: chatSession.session_id,
+                nickname: chatSession.nickname
+            },
+            timestamp: new Date().toISOString()
+        };
+        
+        debugLog('📤 Sending join room message:', message);
+        
+        try {
+            ws.send(JSON.stringify(message));
+            selectedRoom = room;
+            loadRoomMessages(room);
+        } catch (error) {
+            console.error('❌ Failed to send join room message:', error);
+        }
+    }
+    
+    async function loadRoomMessages(room) {
+        try {
+            const roomMessages = await API.loadMessageHistory(room);
+            // 백엔드에서 최신 순(내림차순)으로 오므로 채팅 UI용으로 역순(오름차순)으로 정렬
+            messages = roomMessages.reverse();
+        } catch (error) {
+            console.error('Failed to load messages:', error);
+            messages = [];
+        }
+    }
+    
+    function sendMessage() {
+        if (!newMessage.trim()) {
+            debugLog('❌ Cannot send empty message');
+            return;
+        }
+        
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            debugLog('❌ Cannot send message: WebSocket not connected');
+            alert('채팅 서버에 연결되지 않았습니다. 잠시 후 다시 시도해주세요.');
+            return;
+        }
+        
+        if (newMessage.length > 280) {
+            alert(t('chat.messageTooLong', currentLanguage));
+            return;
+        }
+        
+        const message = {
+            type: 'chat_message',
+            content: newMessage.trim(),
+            timestamp: new Date().toISOString()
+        };
+        
+        debugLog('📤 Sending chat message:', message);
+        
+        try {
+            ws.send(JSON.stringify(message));
+            newMessage = '';
+        } catch (error) {
+            console.error('❌ Failed to send message:', error);
+            alert('메시지 전송에 실패했습니다. 다시 시도해주세요.');
+        }
+    }
+    
+    async function initializeChat() {
+        try {
+            // 세션과 채팅방 데이터를 병렬로 로드
+            const [sessionData, roomsData] = await Promise.all([
+                API.createSession(),
+                API.loadChatRooms()
+            ]);
+            
+            chatSession = sessionData;
+            userNickname = sessionData.nickname;
+            // API 데이터와 기본 데이터를 병합
+            actualChatRooms = roomsData.map(room => ({
+                ...room,
+                flag: defaultChatRooms.find(r => r.id === room.id)?.flag || '🌍'
+            }));
+            
+            connectWebSocket();
+        } catch (error) {
+            console.error('Failed to initialize chat:', error);
+        }
+    }
 
     // Lifecycle
     $effect(() => {
         currentLanguage = detectLanguage();
         loadData();
+    });
+    
+    // 채팅 탭 활성화 시 세션 초기화
+    $effect(() => {
+        if (activeTab === 'chat' && !chatSession) {
+            debugLog('🔧 Chat tab activated, initializing chat...');
+            initializeChat();
+        }
+        
+        // 채팅 탭이 아닐 때는 WebSocket 연결 정리
+        if (activeTab !== 'chat' && ws) {
+            debugLog('🔧 Chat tab deactivated, cleaning up WebSocket...');
+            ws.close(1000, 'Tab changed');
+            ws = null;
+            isConnected = false;
+        }
     });
 
     // Search cities with debounce
@@ -204,9 +693,12 @@
     }
     
     function handleTabClick(tab) {
-        if (tab === 'chat' || tab === 'profile') {
+        if (tab === 'profile') {
             alert(t('common.developingService', currentLanguage));
             return;
+        }
+        if (tab === 'chat' && !isLoggedIn) {
+            // Allow anonymous users to access chat rooms
         }
         activeTab = tab;
     }
@@ -322,7 +814,6 @@
                         >
                             <MessageSquare class="w-4 h-4" />
                             <span>{t('nav.chat', currentLanguage)}</span>
-                            {#if !isLoggedIn}<Lock class="w-3 h-3" />{/if}
                         </button>
                         <button
                                 onclick={() => handleTabClick('profile')}
@@ -696,14 +1187,179 @@
         </main>
     {/if}
 
-    {#if activeTab === 'chat' && isLoggedIn}
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div class="bg-white rounded-2xl shadow-lg p-12 text-center">
-                <MessageSquare class="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">채팅방</h2>
-                <p class="text-gray-600">이 기능은 준비 중입니다</p>
+    {#if activeTab === 'chat'}
+        <main class="w-full mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-4 flex-1 max-w-none xl:max-w-[88rem] 2xl:max-w-[96rem]">
+            <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 h-full">
+                <!-- Left Panel - Chat Rooms -->
+                <div class="bg-white rounded-2xl shadow-lg p-4 h-full flex flex-col xl:col-span-4">
+                    <div class="flex items-center justify-between mb-4 flex-shrink-0">
+                        <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                            <MessageSquare class="w-5 h-5 mr-2 text-rose-600" />
+                            {t('nav.chat', currentLanguage)}
+                        </h2>
+                        {#if isConnected}
+                            <div class="flex items-center text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                                <div class="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></div>
+                                {t('chat.connected', currentLanguage)}
+                            </div>
+                        {:else}
+                            <div class="flex items-center text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                <div class="w-2 h-2 bg-gray-400 rounded-full mr-1"></div>
+                                {t('chat.connecting', currentLanguage)}
+                            </div>
+                        {/if}
+                    </div>
+                    
+                    <!-- User Info -->
+                    {#if userNickname}
+                        <div class="bg-gradient-to-r {generateUserColor(userNickname, true)} rounded-lg p-3 mb-4 flex-shrink-0 border border-opacity-20">
+                            <div class="flex items-center text-sm">
+                                <div class="w-6 h-6 bg-gradient-to-r {generateUserColor(userNickname)} rounded-full flex items-center justify-center mr-2">
+                                    <span class="text-white text-xs font-medium">
+                                        {userNickname.charAt(0).toUpperCase()}
+                                    </span>
+                                </div>
+                                <span class="font-medium text-gray-800">{userNickname}</span>
+                                <span class="ml-2 text-xs text-gray-600 bg-white bg-opacity-80 px-2 py-1 rounded-full">{t('chat.anonymous', currentLanguage)}</span>
+                            </div>
+                        </div>
+                    {/if}
+                    
+                    <!-- Room List -->
+                    <div class="flex-1 overflow-y-auto space-y-2">
+                        <h3 class="text-sm font-semibold text-gray-600 mb-2">{t('chat.countryRooms', currentLanguage)}</h3>
+                        {#each actualChatRooms as room}
+                            <button
+                                onclick={() => joinRoom(room.id)}
+                                class="w-full text-left p-3 rounded-lg transition-all hover:bg-gradient-to-r hover:from-rose-50 hover:to-orange-50 {selectedRoom === room.id 
+                                    ? 'bg-gradient-to-r from-rose-100 to-orange-100 border-l-4 border-rose-500' 
+                                    : 'hover:shadow-md border border-gray-100'}"
+                            >
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <span class="text-2xl">{room.flag}</span>
+                                        <div>
+                                            <div class="font-medium text-gray-800 text-sm">{room.name}</div>
+                                            <div class="text-xs text-gray-500">#{room.id}</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-1">
+                                        <Users class="w-3 h-3 text-gray-400" />
+                                        <span class="text-xs text-gray-500">{room.user_count || room.userCount || 0}</span>
+                                    </div>
+                                </div>
+                            </button>
+                        {/each}
+                    </div>
+                    
+                    <!-- Beta Notice -->
+                    <div class="flex-shrink-0 mt-4 p-3 bg-amber-50 rounded-lg border-l-4 border-amber-400">
+                        <div class="flex items-start">
+                            <AlertCircle class="w-4 h-4 text-amber-600 mr-2 flex-shrink-0 mt-0.5" />
+                            <div class="text-xs text-amber-800">
+                                <div class="font-medium mb-1">{t('chat.betaFeature', currentLanguage)}</div>
+                                <div>{t('chat.betaDescription', currentLanguage)}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel - Chat Messages -->
+                <div class="bg-white rounded-2xl shadow-lg flex flex-col xl:col-span-8 h-[600px] md:h-[700px]">
+                    <!-- Chat Header -->
+                    <div class="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
+                        <div class="flex items-center space-x-3">
+                            <Hash class="w-5 h-5 text-gray-400" />
+                            <div>
+                                <h3 class="font-semibold text-gray-800">
+                                    {actualChatRooms.find(r => r.id === selectedRoom)?.name || selectedRoom}
+                                </h3>
+                                <p class="text-xs text-gray-500">
+                                    {actualChatRooms.find(r => r.id === selectedRoom)?.flag} {t('chat.publicChatRoom', currentLanguage)}
+                                </p>
+                            </div>
+                        </div>
+                        <button class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                            <MoreVertical class="w-4 h-4 text-gray-500" />
+                        </button>
+                    </div>
+                    
+                    <!-- Messages Area -->
+                    <div class="messages-area flex-1 overflow-y-auto p-4 space-y-4">
+                        {#if messages.length === 0}
+                            <div class="flex flex-col items-center justify-center h-full text-gray-400">
+                                <div class="w-16 h-16 bg-gradient-to-br from-rose-100 to-orange-100 rounded-full flex items-center justify-center mb-4">
+                                    <MessageSquare class="w-8 h-8 text-rose-400" />
+                                </div>
+                                <p class="text-center text-gray-600 text-sm">
+                                    {t('chat.welcome', currentLanguage, { room: actualChatRooms.find(r => r.id === selectedRoom)?.name })}<br />
+                                    {t('chat.startConversation', currentLanguage)}
+                                </p>
+                            </div>
+                        {:else}
+                            {#each messages as message}
+                                <div class="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <div class="w-8 h-8 bg-gradient-to-r {generateUserColor(message.data?.sender || message.sender)} rounded-full flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-xs font-medium">
+                                            {(message.data?.sender || message.sender || 'Anonymous').charAt(0).toUpperCase()}
+                                        </span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-baseline space-x-2 mb-1">
+                                            <span class="font-medium text-sm text-gray-800">
+                                                {message.data?.sender || message.sender || 'Anonymous'}
+                                            </span>
+                                            <span class="text-xs text-gray-500">
+                                                {(() => {
+                                                    const date = new Date(message.timestamp || message.created_at || message.data?.created_at);
+                                                    return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleTimeString();
+                                                })()}
+                                            </span>
+                                        </div>
+                                        <p class="text-sm text-gray-700 break-words">{message.data?.content || message.content || 'No content'}</p>
+                                    </div>
+                                </div>
+                            {/each}
+                        {/if}
+                    </div>
+                    
+                    <!-- Message Input -->
+                    <div class="p-4 border-t border-gray-200 flex-shrink-0">
+                        <form onsubmit={(e) => { e.preventDefault(); sendMessage(); }} class="flex space-x-3">
+                            <div class="flex-1 relative">
+                                <input
+                                    type="text"
+                                    bind:value={newMessage}
+                                    placeholder={t('chat.typePlaceholder', currentLanguage)}
+                                    maxlength="280"
+                                    disabled={!isConnected && !chatSession}
+                                    oncompositionstart={() => { isComposing = true; }}
+                                    oncompositionend={() => { isComposing = false; }}
+                                    onkeydown={(e) => { 
+                                        if (e.key === 'Enter' && !e.shiftKey && !isComposing) { 
+                                            e.preventDefault(); 
+                                            sendMessage(); 
+                                        } 
+                                    }}
+                                    class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                />
+                                <div class="absolute right-3 top-3 text-xs text-gray-400">
+                                    {newMessage.length}/280
+                                </div>
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={!isConnected || !newMessage.trim()}
+                                class="px-6 py-3 bg-gradient-to-r from-rose-600 to-orange-500 text-white rounded-lg hover:from-rose-700 hover:to-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 shadow-md hover:shadow-lg"
+                            >
+                                <Send class="w-4 h-4" />
+                                <span class="hidden sm:inline">{t('chat.send', currentLanguage)}</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
-        </div>
+        </main>
     {/if}
 
     {#if activeTab === 'profile' && isLoggedIn}

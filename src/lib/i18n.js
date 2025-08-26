@@ -80,6 +80,21 @@ export const translations = {
             rights: "모든 권리 보유",
             poweredBy: "SvelteKit으로 제작"
         },
+        // 채팅
+        chat: {
+            welcome: "{room} 채팅방에 오신 것을 환영합니다!",
+            startConversation: "동료 여행자들과 대화를 시작해보세요.",
+            typePlaceholder: "메시지를 입력하세요... (최대 280자)",
+            send: "보내기",
+            connected: "연결됨",
+            connecting: "연결 중...",
+            anonymous: "익명",
+            countryRooms: "국가별 채팅방",
+            betaFeature: "베타 기능",
+            betaDescription: "전 세계 여행자들과 실시간 채팅. 익명 접속 가능.",
+            messageTooLong: "메시지가 너무 깁니다 (최대 280자)",
+            publicChatRoom: "공개 채팅방"
+        },
         // 기타
         common: {
             loading: "잠시만 기다려주세요...",
@@ -169,6 +184,21 @@ export const translations = {
             version: "Beta Version",
             rights: "All rights reserved",
             poweredBy: "Built with SvelteKit"
+        },
+        // Chat
+        chat: {
+            welcome: "Welcome to the {room} chat room!",
+            startConversation: "Start a conversation with fellow travelers.",
+            typePlaceholder: "Type a message... (max 280 characters)",
+            send: "Send",
+            connected: "Connected",
+            connecting: "Connecting...",
+            anonymous: "Anonymous",
+            countryRooms: "Country Rooms",
+            betaFeature: "Beta Feature",
+            betaDescription: "Real-time chat with travelers worldwide. Anonymous access allowed.",
+            messageTooLong: "Message too long (max 280 characters)",
+            publicChatRoom: "Public chat room"
         },
         // Common
         common: {
