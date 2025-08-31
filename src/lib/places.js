@@ -1,8 +1,9 @@
 // Google Places API 서비스
 import { browser } from '$app/environment';
 
-const API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY || 'AIzaSyANvljab01gOZh-Z0m-14JXkfjxf3kOeWo';
-const PLACES_API_BASE = 'https://maps.googleapis.com/maps/api/place/autocomplete/json';
+// Google Places API 설정
+const API_KEY = import.meta.env.GOOGLE_PLACES_API_KEY;
+const PLACES_API_BASE = import.meta.env.VITE_PLACES_API_BASE || 'https://maps.googleapis.com/maps/api/place/autocomplete/json';
 
 /**
  * 도시 자동완성 검색
@@ -24,6 +25,12 @@ export async function searchCities(input, language = 'ko') {
     //     return mockCitySearch(input, language);
     // }
     console.log('🔍 실제 Google Places API 호출 시도');
+
+    // API 키 유효성 검사
+    if (!API_KEY) {
+        console.error('❌ Google Places API 키가 설정되지 않았습니다');
+        return mockCitySearch(input, language);
+    }
 
     // 프로덕션 환경에서는 실제 Places API 호출
     try {
