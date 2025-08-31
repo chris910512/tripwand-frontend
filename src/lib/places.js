@@ -1,9 +1,15 @@
-// Google Places API 서비스
+// Google Places API 서비스 (백엔드 프록시 방식)
 import { browser } from '$app/environment';
 
-// Google Places API 설정
-const API_KEY = import.meta.env.GOOGLE_PLACES_API_KEY;
-const PLACES_API_BASE = import.meta.env.VITE_PLACES_API_BASE || 'https://maps.googleapis.com/maps/api/place/autocomplete/json';
+// 백엔드 API 설정
+const getApiUrl = () => {
+    if (typeof window !== 'undefined') {
+        return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:8080'
+            : 'https://api.tripwand.online';
+    }
+    return 'https://api.tripwand.online'; // SSR fallback
+};
 
 /**
  * 도시 자동완성 검색
@@ -12,57 +18,64 @@ const PLACES_API_BASE = import.meta.env.VITE_PLACES_API_BASE || 'https://maps.go
  * @returns {Promise<Array<Object>>} 도시 목록
  */
 export async function searchCities(input, language = 'ko') {
-    console.log('🔍 searchCities 호출됨:', { input, language, browser });
+    console.log('🔍 searchCities 호출됨 (백엔드 프록시 방식):', { input, language, browser });
     
     if (!browser || !input || input.trim().length < 2) {
         console.log('🔍 조건 불충족:', { browser, input, length: input?.length });
         return [];
     }
 
-    // 개발 환경에서도 실제 Places API 테스트해보기 (테스트용)
+    // 백엔드 API 구현 완료로 실제 API 호출로 변경
     // if (import.meta.env.DEV) {
-    //     console.log('🔍 Mock 데이터 사용 (DEV 모드)');
+    //     console.log('🔍 개발 환경: Mock 데이터 사용');
     //     return mockCitySearch(input, language);
     // }
-    console.log('🔍 실제 Google Places API 호출 시도');
 
-    // API 키 유효성 검사
-    if (!API_KEY) {
-        console.error('❌ Google Places API 키가 설정되지 않았습니다');
-        return mockCitySearch(input, language);
-    }
+    console.log('🔍 백엔드 프록시를 통해 Places API 호출');
 
-    // 프로덕션 환경에서는 실제 Places API 호출
+    // 백엔드 프록시를 통해 Places API 호출
     try {
-        const params = new URLSearchParams({
-            input: input.trim(),
-            types: '(cities)',
-            key: API_KEY,
-            language: language === 'ko' ? 'ko' : 'en'
-        });
+        const apiUrl = getApiUrl();
+        console.log('🔍 API URL:', `${apiUrl}/api/v1/places/search`);
 
-        const response = await fetch(`${PLACES_API_BASE}?${params}`);
+        const response = await fetch(`${apiUrl}/api/v1/places/search`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                input: input.trim(),
+                language: language,
+                types: 'cities'
+            })
+        });
         
         if (!response.ok) {
-            console.error(`API 요청 실패: ${response.status}`);
+            console.error(`백엔드 API 요청 실패: ${response.status}`);
             return mockCitySearch(input, language);
         }
 
         const data = await response.json();
+        console.log('🔍 백엔드 응답:', data);
         
-        if (data.status !== 'OK') {
-            console.warn('Places API 응답 상태:', data.status);
-            return [];
+        if (!data.success) {
+            console.warn('백엔드 API 오류:', {
+                error: data.error,
+                message: data.message,
+                data: data.data
+            });
+            return mockCitySearch(input, language);
         }
 
-        return data.predictions.map(/** @param {any} prediction */ (prediction) => ({
+        // 백엔드 응답 형식에 맞게 매핑 (명세서에 따른 구조)
+        return data.data.predictions?.map(/** @param {any} prediction */ (prediction) => ({
             id: prediction.place_id,
             name: prediction.description,
             structured_formatting: prediction.structured_formatting
-        }));
+        })) || [];
 
     } catch (error) {
-        console.error('도시 검색 중 오류:', error);
+        console.error('백엔드 API 호출 중 오류:', error);
         // 오류 시 mock 데이터 반환
         return mockCitySearch(input, language);
     }
