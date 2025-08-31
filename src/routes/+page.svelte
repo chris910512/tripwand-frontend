@@ -3,6 +3,7 @@
     import { MapPin, Calendar, Users, Target, Compass, User, LogIn, ChevronRight, Clock, DollarSign, AlertCircle, Search, MessageSquare, UserCircle, Lock, Globe, Send, Hash, Smile, MoreVertical } from 'lucide-svelte';
     import favicon from '$lib/assets/favicon.svg';
     import { detectLanguage, t, saveLanguage } from '$lib/i18n.js';
+    import { searchCities } from '$lib/places.js';
     import { dev } from '$app/environment';
     
     let { data } = $props();
@@ -129,20 +130,24 @@
     // API 인터페이스
     const API = {
         searchCities: async (query) => {
-            const mockCities = [
-                { id: 1, name: '서울', country: '대한민국' },
-                { id: 2, name: '도쿄', country: '일본' },
-                { id: 3, name: '파리', country: '프랑스' },
-                { id: 4, name: '뉴욕', country: '미국' },
-                { id: 5, name: '런던', country: '영국' },
-                { id: 6, name: '바르셀로나', country: '스페인' },
-                { id: 7, name: '로마', country: '이탈리아' },
-                { id: 8, name: '시드니', country: '호주' }
-            ];
-            return mockCities.filter(city =>
-                city.name.toLowerCase().includes(query.toLowerCase()) ||
-                city.country.toLowerCase().includes(query.toLowerCase())
-            );
+            console.log('🔎 API.searchCities 호출:', query);
+            try {
+                const results = await searchCities(query, currentLanguage);
+                console.log('🔎 searchCities 결과:', results);
+                
+                // Places API 결과를 기존 형식에 맞게 변환
+                const mappedResults = results.map(place => ({
+                    id: place.id,
+                    name: place.structured_formatting?.main_text || place.name.split(',')[0],
+                    country: place.structured_formatting?.secondary_text || place.name.split(',').slice(1).join(',').trim()
+                }));
+                
+                console.log('🔎 변환된 결과:', mappedResults);
+                return mappedResults;
+            } catch (error) {
+                console.error('City search failed:', error);
+                return [];
+            }
         },
 
         getTravelPurposes: async () => {
@@ -614,17 +619,23 @@
 
     // Search cities with debounce
     $effect(() => {
+        console.log('🎯 citySearch 변경됨:', citySearch);
+        
         if (searchTimer) clearTimeout(searchTimer);
 
         searchTimer = setTimeout(async () => {
             if (citySearch) {
+                console.log('🎯 검색 시작:', citySearch);
                 const results = await API.searchCities(citySearch);
+                console.log('🎯 검색 완료, 결과:', results);
                 cities = results;
                 showCityDropdown = true;
+                console.log('🎯 드롭다운 표시:', showCityDropdown, '결과 개수:', cities.length);
                 
                 // 직접 입력된 경우에도 destination 업데이트
                 formData.destination = citySearch;
             } else {
+                console.log('🎯 검색어 비어있음, 드롭다운 숨김');
                 cities = [];
                 showCityDropdown = false;
                 formData.destination = '';
