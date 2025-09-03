@@ -653,8 +653,10 @@
     }
 
     function handleCitySelect(city) {
-        formData.destination = `${city.name}, ${city.country}`;
-        citySearch = `${city.name}, ${city.country}`;
+        // 구조화된 포맷팅에서 메인 텍스트(도시명)만 사용
+        const cityName = city.structured_formatting?.main_text || city.name.split(',')[0];
+        formData.destination = cityName;
+        citySearch = cityName;
         showCityDropdown = false;
     }
 
@@ -727,8 +729,15 @@
     <meta property="og:title" content={data.meta.title} />
     <meta property="og:description" content={data.meta.description} />
     <meta property="og:image" content={data.meta.image} />
-    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:locale" content={currentLanguage === 'ko' ? 'ko_KR' : 'en_US'} />
+    <meta property="og:locale:alternate" content={currentLanguage === 'ko' ? 'en_US' : 'ko_KR'} />
     <meta property="og:site_name" content="TripWand" />
+    
+    <!-- Language and region targeting -->
+    <meta name="language" content={currentLanguage} />
+    <link rel="alternate" hreflang="ko" href="https://tripwand.online" />
+    <link rel="alternate" hreflang="en" href="https://tripwand.online?lang=en" />
+    <link rel="alternate" hreflang="x-default" href="https://tripwand.online" />
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
@@ -743,24 +752,44 @@
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "TripWand",
-        "description": "AI 기반 맞춤형 여행 계획 생성 서비스",
+        "description": {currentLanguage === 'ko' ? "AI 기반 맞춤형 여행 계획 생성 서비스" : "AI-powered personalized travel planning service"},
         "url": "https://tripwand.online",
         "applicationCategory": "TravelApplication",
-        "operatingSystem": "웹 브라우저",
+        "operatingSystem": "Any",
+        "browserRequirements": "Modern web browser with JavaScript enabled",
+        "featureList": [
+            {currentLanguage === 'ko' ? "AI 여행 계획 생성" : "AI travel itinerary generation"},
+            {currentLanguage === 'ko' ? "맞춤형 추천" : "Personalized recommendations"},
+            {currentLanguage === 'ko' ? "다국어 지원" : "Multi-language support"},
+            {currentLanguage === 'ko' ? "실시간 채팅" : "Real-time chat"}
+        ],
         "offers": {
             "@type": "Offer",
             "price": "0",
-            "priceCurrency": "KRW"
+            "priceCurrency": "KRW",
+            "availability": "https://schema.org/InStock"
         },
-        "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "4.8",
-            "ratingCount": "150"
-        },
+        "inLanguage": [
+            {
+                "@type": "Language",
+                "name": "Korean",
+                "alternateName": "ko"
+            },
+            {
+                "@type": "Language", 
+                "name": "English",
+                "alternateName": "en"
+            }
+        ],
         "creator": {
             "@type": "Organization",
             "name": "TripWand",
-            "url": "https://tripwand.online"
+            "url": "https://tripwand.online",
+            "contactPoint": {
+                "@type": "ContactPoint",
+                "email": "sungmin.park.lab@gmail.com",
+                "contactType": "customer service"
+            }
         }
     }
     </script>
@@ -770,14 +799,64 @@
         "@context": "https://schema.org",
         "@type": "TravelAgency",
         "name": "TripWand",
-        "description": "AI 기반 맞춤형 여행 계획 생성 서비스",
+        "description": {currentLanguage === 'ko' ? "AI 기반 맞춤형 여행 계획 생성 서비스" : "AI-powered personalized travel planning service"},
         "url": "https://tripwand.online",
-        "areaServed": {
-            "@type": "Country",
-            "name": "대한민국"
+        "areaServed": [
+            {
+                "@type": "Country",
+                "name": {currentLanguage === 'ko' ? "대한민국" : "South Korea"}
+            },
+            {
+                "@type": "Place",
+                "name": {currentLanguage === 'ko' ? "전 세계" : "Worldwide"}
+            }
+        ],
+        "serviceType": {currentLanguage === 'ko' ? "AI 여행 계획 수립" : "AI Travel Planning"},
+        "priceRange": {currentLanguage === 'ko' ? "무료" : "Free"},
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "email": "sungmin.park.lab@gmail.com",
+            "contactType": "customer service"
         },
-        "serviceType": "여행 계획 수립",
-        "priceRange": "무료"
+        "hasOfferCatalog": {
+            "@type": "OfferCatalog",
+            "name": {currentLanguage === 'ko' ? "여행 계획 서비스" : "Travel Planning Services"},
+            "itemListElement": [
+                {
+                    "@type": "Offer",
+                    "itemOffered": {
+                        "@type": "Service",
+                        "name": {currentLanguage === 'ko' ? "맞춤형 여행 일정 생성" : "Personalized Itinerary Generation"},
+                        "description": {currentLanguage === 'ko' ? "AI가 개인 취향에 맞는 여행 일정을 자동 생성" : "AI generates travel itineraries based on personal preferences"}
+                    }
+                }
+            ]
+        }
+    }
+    </script>
+    
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": {currentLanguage === 'ko' ? "TripWand는 어떤 서비스인가요?" : "What is TripWand?"},
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": {currentLanguage === 'ko' ? "TripWand는 AI 기술을 활용하여 개인 맞춤형 여행 계획을 자동으로 생성해주는 무료 서비스입니다." : "TripWand is a free service that uses AI technology to automatically generate personalized travel plans."}
+                }
+            },
+            {
+                "@type": "Question",
+                "name": {currentLanguage === 'ko' ? "어떤 정보를 입력해야 하나요?" : "What information do I need to provide?"},
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": {currentLanguage === 'ko' ? "여행지, 여행 기간, 연령대, 인원 수, 여행 목적, 여행 타입 등을 입력하면 최적의 여행 계획을 생성해드립니다." : "You need to provide destination, duration, age group, group size, travel purpose, and travel type to generate optimal travel plans."}
+                }
+            }
+        ]
     }
     </script>
 </svelte:head>

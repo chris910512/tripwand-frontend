@@ -1,12 +1,27 @@
-# TripWand - AI 여행 계획 생성기
+# TripWand - AI Travel Planner / AI 여행 계획 생성기
 User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /_app/
 Disallow: /admin/
+Disallow: /*?*&*
+Allow: /*?lang=*
+
+# Popular search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 2
 
 # Sitemap location
 Sitemap: https://tripwand.online/sitemap.xml
 
-# Crawl delay for better server performance
-Crawl-delay: 1
+# Host preference (for www vs non-www)
+Host: https://tripwand.online
